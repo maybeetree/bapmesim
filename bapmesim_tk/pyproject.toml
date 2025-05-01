@@ -1,0 +1,45 @@
+[build-system]
+
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bapmesim_tk"
+version = "0.0.0"
+description = """BAP Mesh Simulator with tkinter"""
+authors = [
+	{name = "maybetree", email = "no@email.com"}
+	]
+license = "GPL-3.0-only"
+readme = "README.md"
+classifiers = [
+	'Programming Language :: Python :: 3',
+	]
+requires-python = ">=3.10"
+dependencies = [
+	"numpy",
+	"networkx",
+	"matplot",
+	]
+
+#[project.scripts]
+#raimad = "raimad.cli:cli"
+
+#[tool.ruff.lint]
+#exclude = [
+#    "tests/*",
+#    "benchmarks/*",
+#    "foo.py",
+#    "bar.py",
+#    ]
+#select = [
+#    "E",
+#    "F",
+#    "D",
+#    ]
+#ignore = [
+#    "D401",  # don't complain about "imperative mood"
+#    "D202",  # Allow blank line after docstring
+#    ]
+#[tool.ruff.lint.pydocstyle]
+#convention = "numpy"
