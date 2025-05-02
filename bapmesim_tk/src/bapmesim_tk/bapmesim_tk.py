@@ -1,5 +1,6 @@
 import tkinter as tk
 import code
+import platform
 
 import numpy as np
 import networkx as nx
@@ -102,8 +103,11 @@ class SimTK:
 
         self.root = tk.Tk()
 
-        # Tell tiling WMs to spawn the window in floating mode
-        self.root.attributes('-type', 'dialog')
+        if platform.system() == 'Linux':
+            self.root.attributes('-type', 'dialog')
+            # Tell tiling WMs to spawn the window in floating mode.
+            # This will actually crash on Windows, so have
+            # to check the platform first.
 
         # Exit program on window close
         # (i.e. kill interactive shell if it is running)
