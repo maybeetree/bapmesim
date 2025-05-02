@@ -68,11 +68,10 @@ jobs:
             --name bapmesim_tk ^
             --onefile ^
             src/bapmesim_tk/__main__.py
-          $tagname = (git describe --tags --abbrev=0)
-          Rename-Item -Path "dist\bapmesim_tk.exe" -NewName "bapmesim_tk-$tagname-windows.exe"
+          for /f %%A in ('git describe --tags --abbrev=0') do set TAGNAME=%%A
+          rename dist\bapmesim_tk.exe bapmesim_tk-%TAGNAME%-windows.exe
 
       - name: Upload release artifact (Windows)
         uses: ncipollo/release-action@v1
         with:
           artifacts: "bapmesim_tk/dist/bapmesim_tk-*-windows.exe"
-
