@@ -1,7 +1,17 @@
 # BAPMESIM: BachelorAfstudeerProject Mesh Networking Simulations
 
+![Screenshot of `bapmesim_tk`](img/bapmesim_tk.png)
+
 This repo contains our group's mesh networking simulations.
 Currently there is only one, `bapmesim_tk`.
+
+## Using
+
+Download and run the windows or linux build from the
+[releases page](https://github.com/maybeetree/bapmesim/releases).
+
+## Developing
+
 You can install it with the standard Python method:
 
 ```sh
