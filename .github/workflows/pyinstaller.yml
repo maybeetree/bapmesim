@@ -58,6 +58,7 @@ jobs:
           python-version: '3.12'
 
       - name: Set up everything else (Windows)
+        shell: cmd
         run: |
           cd bapmesim_tk
           pip install -e .
