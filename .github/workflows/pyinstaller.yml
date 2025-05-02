@@ -28,6 +28,7 @@ jobs:
           cd bapmesim_tk
           pip install -e .
           pip install pyinstaller
+          pip uninstall typing
           pyinstaller \
             --hidden-import='PIL._tkinter_finder' \
             --name bapmesim_tk \
@@ -41,8 +42,8 @@ jobs:
           tagname=$(git describe --tags --abbrev=0)
           cd dist
           mv "bapmesim_tk" "bapmesim_tk-${tagname}"
-          tar cf - "bapmesim_tk-${tagname}" | zstd --compress --ultra -20 --threads=0 - -o "bapmesim_tk-${tagname}.tar.zst"
-          mv "bapmesim_tk-${tagname}" "bapmesim_tk"
+          #tar cf - "bapmesim_tk-${tagname}" | zstd --compress --ultra -20 --threads=0 - -o "bapmesim_tk-${tagname}.tar.zst"
+          #mv "bapmesim_tk-${tagname}" "bapmesim_tk"
           ls -lah
           set +e
         
@@ -54,5 +55,5 @@ jobs:
       - name: Upload release artifact
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "*.tar.zst"
+          artifacts: "dist/bapmesim_tk-*"
 
