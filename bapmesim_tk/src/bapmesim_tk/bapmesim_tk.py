@@ -105,7 +105,42 @@ class SimTK:
             height=400
             )
 
+        self.but_scatter = tk.Button(
+            self.root,
+            text="Scatter nodes",
+            command=self.callback_scatter
+            )
+
+        self.spin_num_nodes = tk.Spinbox(
+            self.root,
+            value=1000
+            )
+
+        self.but_plots = tk.Button(
+            self.root,
+            text="Make plots",
+            command=self.callback_plots
+            )
+
+        self.spin_node_range = tk.Spinbox(
+            self.root,
+            value=0.2
+            )
+
         self.canvas.pack()
+        self.spin_num_nodes.pack()
+        self.but_scatter.pack()
+        self.spin_node_range.pack()
+        self.but_plots.pack()
+
+    def callback_plots(self):
+        self.sim.make_graph(float(self.spin_node_range.get()))
+        self.plot_path_length_hist()
+        self.plot_connected_pie()
+
+    def callback_scatter(self):
+        self.sim.scatter_nodes(int(self.spin_num_nodes.get()))
+        self.draw_nodes()
 
     def canvas_cpair(self, cpair):
         cx = cpair[0] * 50 + 200
@@ -125,6 +160,7 @@ class SimTK:
         self.canvas.create_line(cx - 2, cy + 2, cx + 2, cy - 2, **style)
 
     def draw_nodes(self):
+        self.canvas.delete("all")
         for cpair in self.sim.nodes_pos:
             self.draw_node(cpair)
 
@@ -160,13 +196,13 @@ class SimTK:
 
 def cli():
     sim = Sim()
-    sim.scatter_nodes(1000)
-    sim.make_graph(0.2)
+    #sim.scatter_nodes(1000)
+    #sim.make_graph(0.2)
 
     simtk = SimTK(sim)
-    simtk.draw_nodes()
-    simtk.plot_path_length_hist()
-    simtk.plot_connected_pie()
+    #simtk.draw_nodes()
+    #simtk.plot_path_length_hist()
+    #simtk.plot_connected_pie()
 
     simtk.spawn_shell_nonblocking()
     simtk.mainloop()
