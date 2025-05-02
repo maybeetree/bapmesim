@@ -40,12 +40,12 @@ jobs:
         run: |
           set -e
           tagname=$(git describe --tags --abbrev=0)
-          cd dist
+          cd bapmesim_tk/dist
           mv "bapmesim_tk" "bapmesim_tk-${tagname}"
           set +e
 
       - name: Upload release artifact
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "dist/bapmesim_tk-*"
+          artifacts: "bapmesim_tk/dist/bapmesim_tk-*"
 
