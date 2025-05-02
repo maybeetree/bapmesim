@@ -63,6 +63,7 @@ jobs:
           cd bapmesim_tk
           pip install -e .
           pip install pyinstaller
+          pip uninstall --yes typing
           pyinstaller ^
             --hidden-import=PIL._tkinter_finder ^
             --name bapmesim_tk ^
