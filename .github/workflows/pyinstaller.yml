@@ -6,15 +6,14 @@ on:
       - '*'
 
 jobs:
-  build:
+  build-linux:
     runs-on: ubuntu-latest
 
-    # Needed by release action
     permissions:
       contents: write
 
     steps:
-      - name: checkout repo
+      - name: Checkout repo
         uses: actions/checkout@v2
 
       - name: Set up Python
@@ -22,7 +21,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Set up everything else
+      - name: Set up everything else (Linux)
         run: |
           set -e
           cd bapmesim_tk
@@ -34,18 +33,45 @@ jobs:
             --name bapmesim_tk \
             --onefile \
             src/bapmesim_tk/__main__.py 
-          set +e
-
-      - name: Make release
-        run: |
-          set -e
           tagname=$(git describe --tags --abbrev=0)
-          cd bapmesim_tk/dist
-          mv "bapmesim_tk" "bapmesim_tk-${tagname}"
+          mv dist/bapmesim_tk "dist/bapmesim_tk-${tagname}-linux"
           set +e
 
-      - name: Upload release artifact
+      - name: Upload release artifact (Linux)
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "bapmesim_tk/dist/bapmesim_tk-*"
+          artifacts: "bapmesim_tk/dist/bapmesim_tk-*-linux"
+
+  build-windows:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Set up everything else (Windows)
+        run: |
+          cd bapmesim_tk
+          pip install -e .
+          pip install pyinstaller
+          pyinstaller ^
+            --hidden-import=PIL._tkinter_finder ^
+            --name bapmesim_tk ^
+            --onefile ^
+            src/bapmesim_tk/__main__.py
+          $tagname = (git describe --tags --abbrev=0)
+          Rename-Item -Path "dist\bapmesim_tk.exe" -NewName "bapmesim_tk-$tagname-windows.exe"
+
+      - name: Upload release artifact (Windows)
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "bapmesim_tk/dist/bapmesim_tk-*-windows.exe"
 
