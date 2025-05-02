@@ -28,7 +28,7 @@ jobs:
           cd bapmesim_tk
           pip install -e .
           pip install pyinstaller
-          pip uninstall typing
+          pip uninstall --yes typing
           pyinstaller \
             --hidden-import='PIL._tkinter_finder' \
             --name bapmesim_tk \
@@ -42,15 +42,7 @@ jobs:
           tagname=$(git describe --tags --abbrev=0)
           cd dist
           mv "bapmesim_tk" "bapmesim_tk-${tagname}"
-          #tar cf - "bapmesim_tk-${tagname}" | zstd --compress --ultra -20 --threads=0 - -o "bapmesim_tk-${tagname}.tar.zst"
-          #mv "bapmesim_tk-${tagname}" "bapmesim_tk"
-          ls -lah
           set +e
-        
-        # FIXME there's probably a code injection
-        # vuln somewhere in these horrible shards of shell code,
-        # but oh well, let's just say we trust
-        # whoever has push access to this repo
 
       - name: Upload release artifact
         uses: ncipollo/release-action@v1
