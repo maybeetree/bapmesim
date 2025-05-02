@@ -5,6 +5,10 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
+from matplotlib.figure import Figure 
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
+
 def plot_hist_with_inf(ax, finite_data, inf_count, bin_width):
     """
     Plots a histogram on the given matplotlib Axes object, with an extra bin for np.inf values.
@@ -90,6 +94,9 @@ class SimTK:
     def __init__(self, sim: Sim):
         self.sim = sim
 
+        self.fig_pie, self.ax_pie = plt.subplots(1, figsize=(3.5, 2.5))
+        self.fig_hist, self.ax_hist = plt.subplots(1, figsize=(3.5, 2.5))
+
         self.root = tk.Tk()
 
         # Tell tiling WMs to spawn the window in floating mode
@@ -105,6 +112,16 @@ class SimTK:
             height=400
             )
 
+        self.canvas_pie = FigureCanvasTkAgg(
+            self.fig_pie,
+            self.root,
+            )
+
+        self.canvas_hist = FigureCanvasTkAgg(
+            self.fig_hist,
+            self.root,
+            )
+
         self.but_scatter = tk.Button(
             self.root,
             text="Scatter nodes",
@@ -113,7 +130,7 @@ class SimTK:
 
         self.spin_num_nodes = tk.Spinbox(
             self.root,
-            value=1000
+            value=100
             )
 
         self.but_plots = tk.Button(
@@ -124,14 +141,21 @@ class SimTK:
 
         self.spin_node_range = tk.Spinbox(
             self.root,
-            value=0.2
+            value=0.6
             )
 
-        self.canvas.pack()
-        self.spin_num_nodes.pack()
-        self.but_scatter.pack()
-        self.spin_node_range.pack()
-        self.but_plots.pack()
+        self.canvas.grid(row=0, column=0, columnspan=3, rowspan=2)
+
+        tk.Label(self.root, text="Number of nodes:").grid(row=2, column=0)
+        self.spin_num_nodes.grid(row=2, column=1)
+        self.but_scatter.grid(row=2, column=2)
+
+        tk.Label(self.root, text="Node range:").grid(row=3, column=0)
+        self.spin_node_range.grid(row=3, column=1)
+        self.but_plots.grid(row=3, column=2)
+
+        self.canvas_pie.get_tk_widget().grid(row=0, column=3) 
+        self.canvas_hist.get_tk_widget().grid(row=1, column=3) 
 
     def callback_plots(self):
         self.sim.make_graph(float(self.spin_node_range.get()))
@@ -154,7 +178,7 @@ class SimTK:
         style = style or {}
 
         if cpair[0] == 0 and cpair[1] == 0:
-            style['fill'] = 'green'
+            style['fill'] = 'red'
 
         self.canvas.create_line(cx - 2, cy - 2, cx + 2, cy + 2, **style)
         self.canvas.create_line(cx - 2, cy + 2, cx + 2, cy - 2, **style)
@@ -166,24 +190,24 @@ class SimTK:
 
     def plot_path_length_hist(self):
         """Make plot of number of hops to root node for each node."""
-        fig, ax = plt.subplots(1)
-        ax.hist(
+        self.ax_hist.clear()
+        self.ax_hist.hist(
             self.sim.path_lengths.values(),
             bins=tuple(range(
                 0,
                 max(self.sim.path_lengths.values()) + 2
                 ))
             )
-        fig.show()
+        self.canvas_hist.draw()
 
     def plot_connected_pie(self):
-        fig, ax = plt.subplots(1)
-        ax.pie(
+        self.ax_pie.clear()
+        self.ax_pie.pie(
             (self.sim.num_connected, self.sim.num_disconnected),
             labels=('connected', 'disconnected'),
             )
-        ax.legend()
-        fig.show()
+        #self.ax_pie.legend()
+        self.canvas_pie.draw()
 
     def mainloop(self):
         self.root.mainloop()
@@ -196,8 +220,8 @@ class SimTK:
 
 def cli():
     sim = Sim()
-    #sim.scatter_nodes(1000)
-    #sim.make_graph(0.2)
+    #sim.scatter_nodes(100)
+    #sim.make_graph(0.6)
 
     simtk = SimTK(sim)
     #simtk.draw_nodes()
