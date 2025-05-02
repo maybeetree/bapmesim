@@ -41,6 +41,8 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "bapmesim_tk/dist/bapmesim_tk-*-linux"
+          # Allow adding artifact to existing release
+          allowUpdates: true
 
   build-windows:
     runs-on: windows-latest
@@ -76,3 +78,6 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "bapmesim_tk/dist/bapmesim_tk-*-windows.exe"
+          # Allow adding artifact to existing release
+          allowUpdates: true
+
