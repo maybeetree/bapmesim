@@ -7,3 +7,5 @@ apk add \
 	\
 	binutils `# for pyinstaller` \
 
+#apk add -X https://dl-cdn.alpinelinux.org/alpine/edge/testing winetricks
+
