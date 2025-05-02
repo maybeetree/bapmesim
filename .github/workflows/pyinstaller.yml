@@ -1,0 +1,58 @@
+name: pyinstaller
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Needed by release action
+    permissions:
+      contents: write
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Set up everything else
+        run: |
+          set -e
+          cd bapmesim_tk
+          pip install -e .
+          pip install pyinstaller
+          pyinstaller \
+            --hidden-import='PIL._tkinter_finder' \
+            --name bapmesim_tk \
+            --onefile \
+            src/bapmesim_tk/__main__.py 
+          set +e
+
+      - name: Make release
+        run: |
+          set -e
+          tagname=$(git describe --tags --abbrev=0)
+          cd dist
+          mv "bapmesim_tk" "bapmesim_tk-${tagname}"
+          tar cf - "bapmesim_tk-${tagname}" | zstd --compress --ultra -20 --threads=0 - -o "bapmesim_tk-${tagname}.tar.zst"
+          mv "bapmesim_tk-${tagname}" "bapmesim_tk"
+          ls -lah
+          set +e
+        
+        # FIXME there's probably a code injection
+        # vuln somewhere in these horrible shards of shell code,
+        # but oh well, let's just say we trust
+        # whoever has push access to this repo
+
+      - name: Upload release artifact
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "*.tar.zst"
+

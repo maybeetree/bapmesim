@@ -9,6 +9,9 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
+# ??? `exit` not available when running in pyinstaller???
+from sys import exit
+
 def plot_hist_with_inf(ax, finite_data, inf_count, bin_width):
     """
     Plots a histogram on the given matplotlib Axes object, with an extra bin for np.inf values.
