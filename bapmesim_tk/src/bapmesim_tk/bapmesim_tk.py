@@ -3,6 +3,7 @@ import code
 import platform
 
 import numpy as np
+import scipy as sp
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -80,14 +81,12 @@ class Sim:
     def make_graph(self, node_range):
         self.graph = nx.Graph()
         self.graph.add_nodes_from(range(self.num_nodes))
-        for i in range(self.num_nodes):
-            for j in range(i, self.num_nodes):
-                # FIXME slow and dumb
-                if np.linalg.norm(self.nodes_pos[i] - self.nodes_pos[j]) <= node_range:
-                    self.graph.add_edge(i, j)
-                    self.graph.add_edge(j, i)
 
-        #self.paths2root = nx.shortest_path(self.graph, 0).keys()
+        self.kdtree = sp.spatial.KDTree(self.nodes_pos)
+        self.graph.add_edges_from(
+            self.kdtree.query_pairs(node_range)
+            )
+
         self.path_lengths = nx.single_source_shortest_path_length(
             self.graph, 0
             )
