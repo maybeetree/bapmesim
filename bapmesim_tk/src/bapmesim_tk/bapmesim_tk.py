@@ -182,7 +182,6 @@ class SimCMD:
         self.simtk.plot_path_length_hist()
         self.simtk.plot_connected_pie()
 
-
 class Toolbar:
     def __init__(self, frame_tbar, frame_opts, canvas, cmd, root):
         self.frame_tbar = frame_tbar
