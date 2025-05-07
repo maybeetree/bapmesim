@@ -1,6 +1,7 @@
 import tkinter as tk
 import code
 import platform
+import logging
 
 import numpy as np
 import scipy as sp
@@ -11,60 +12,57 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
+from .iters import duplets
+
 # ??? `exit` not available when running in pyinstaller???
 from sys import exit
 
-def plot_hist_with_inf(ax, finite_data, inf_count, bin_width):
-    """
-    Plots a histogram on the given matplotlib Axes object, with an extra bin for np.inf values.
-    
-    Parameters:
-        ax (matplotlib.axes.Axes): The Axes object to plot on.
-        finite_data (array-like): Array of finite numeric values.
-        inf_count (int): Number of np.inf values to include in an extra bin.
-        bin_width (float): Width of each histogram bin for the finite data.
-    """
-    # Determine the range for the finite data
-    min_val = np.min(finite_data)
-    max_val = np.max(finite_data)
-
-    # Create bin edges using the specified bin width
-    bins = np.arange(min_val, max_val + bin_width, bin_width)
-
-    # Add an extra bin edge for the infinity bin
-    bins_with_inf = np.append(bins, bins[-1] + bin_width)
-
-    # Compute histogram for finite values
-    hist, _ = np.histogram(finite_data, bins=bins)
-
-    # Add the inf count as an extra bin
-    hist_with_inf = np.append(hist, inf_count)
-
-    # Define bin labels
-    labels = [f'{bins[i]:.2f}–{bins[i+1]:.2f}' for i in range(len(bins) - 1)]
-    labels.append('inf')
-
-    # Plot
-    ax.bar(range(len(hist_with_inf)), hist_with_inf, align='center', tick_label=labels)
-    ax.set_xlabel('Bins')
-    ax.set_ylabel('Frequency')
-    ax.set_title('Histogram with extra bin for infinity')
-    ax.tick_params(axis='x', rotation=45)
+log = logging.getLogger(__name__)
 
 class Sim:
-    """Simulator, no graphics."""
+    """
+    Simulator backend, no graphics.
+
+    Attributes
+    ----------
+
+    nodes_pos
+        np.array of coordinate pairs.
+        This contains all nodes of all clusters.
+
+    cluster_indices
+        Indices of `self.nodes_pos` that point to the
+        clusterhead of every cluster.
+        The last item is not an index, but the total
+        number of nodes.
+
+    """
     def __init__(self):
+        self.nodes_pos = None
+        self.clst_indices = [0, 0]
         pass
 
-    def scatter_nodes(self, num_nodes):
-        self.nodes_pos = np.vstack((
-                ((0, 0), ),  # <-- this is the root node
+    def scatter_nodes(self, num_nodes, clusterhead_pos=(0, 0)):
+        scattered_nodes = np.random.normal(
+            size=(num_nodes - 1, 2)
+            )
 
-                # And the bellow are the scattered nodes
-                np.random.normal(
-                    size=(num_nodes, 2)
-                    )
-                ))
+        if self.nodes_pos is None:
+            self.nodes_pos = np.vstack((
+                    clusterhead_pos,
+                    scattered_nodes
+                    ))
+
+        else:
+            self.nodes_pos = np.vstack((
+                    self.nodes_pos,
+                    clusterhead_pos,
+                    scattered_nodes
+                    ))
+
+        self.clst_indices.pop()
+        self.clst_indices.append(len(self.nodes_pos) - num_nodes)
+        self.clst_indices.append(len(self.nodes_pos))
 
     @property
     def num_nodes(self):
@@ -183,16 +181,19 @@ class SimTK:
 
         style = style or {}
 
-        if cpair[0] == 0 and cpair[1] == 0:
-            style['fill'] = 'red'
-
         self.canvas.create_line(cx - 2, cy - 2, cx + 2, cy + 2, **style)
         self.canvas.create_line(cx - 2, cy + 2, cx + 2, cy - 2, **style)
 
     def draw_nodes(self):
         self.canvas.delete("all")
-        for cpair in self.sim.nodes_pos:
-            self.draw_node(cpair)
+
+        for clst, clst_next in duplets(self.sim.clst_indices):
+
+            if clst_next - clst > 200:
+                log.info(f"Drawing 200 nodes of {clst_next - clst}")
+
+            for node_i in range(clst, min(clst + 200, clst_next)):
+                self.draw_node(self.sim.nodes_pos[node_i])
 
     def plot_path_length_hist(self):
         """Make plot of number of hops to root node for each node."""
