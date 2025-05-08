@@ -1,10 +1,3 @@
-### Project-specific ###
-
-
-
-
-
-
 ### Generic ###
 
 # VIM
@@ -82,3 +75,8 @@ htmlcov
 !img/*.svg
 
 
+### Project-specific ###
+
+
+!bapmesim_tk/src/bapmesim_tk/res/img/*.png
+!bapmesim_tk/src/bapmesim_tk/res/img/*.xbm

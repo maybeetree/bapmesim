@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.filedialog
 import code
 import platform
 import logging
@@ -15,6 +16,7 @@ from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
 from .iters import duplets
 from . import res
+from . import sample_scripts
 from .res import img
 
 # ??? `exit` not available when running in pyinstaller???
@@ -154,13 +156,13 @@ class SimCMD:
         self.simtk.sim.make_tree()
         self.simtk.draw_nodes()
 
-    def meteors(self, size, number):
+    def meteors(self, size, num):
         xmin, ymin = self.simtk.sim.nodes_pos.min(axis=0)
         xmax, ymax = self.simtk.sim.nodes_pos.max(axis=0)
         positions = np.random.uniform(
             [xmin, ymin],
             [xmax, ymax],
-            size=[number, 2]
+            size=[num, 2]
             )
         for loc in positions:
             self.meteor(size, loc)
@@ -169,6 +171,19 @@ class SimCMD:
         self.simtk.sim.make_graph(node_range)
         self.simtk.plot_path_length_hist()
         self.simtk.plot_connected_pie()
+
+    def egg(self):
+        self.simtk.egg()
+
+    def script(self, scriptpath, outpath):
+        with open(scriptpath, 'r') as f:
+            scriptcode = f.read()
+
+        self.simtk.console.runsource(
+            scriptcode,
+            symbol='exec'
+            )
+
 
 class Toolbar:
     def __init__(self, frame_tbar, frame_opts, canvas, cmd, root):
@@ -182,6 +197,8 @@ class Toolbar:
         self.tools = []
         self.frames = []
         self.tool = None
+
+        self.counter = 1
     
     def add_tool(self, tool):
         but = tk.Button(
@@ -205,6 +222,15 @@ class Toolbar:
         but.pack()
 
     def activate(self, tool_num):
+
+        if self.tool == tool_num:
+            self.counter += 1
+        else:
+            self.counter = 1
+        if self.counter == 7:
+            self.counter = 1
+            self.cmd.egg()
+
         if self.tool is not None:
             self.frames[self.tool].pack_forget()
         self.tool = tool_num
@@ -230,7 +256,7 @@ class Tool:
 
         self.setup()
 
-    def cb_click(self):
+    def cb_click(self, event):
         pass
 
 class ToolScatter(Tool):
@@ -341,6 +367,94 @@ class ToolPlot(Tool):
     def make_plots(self):
         self.cmd.make_plots(node_range=float(self.ui_range.get()))
 
+class ToolScripts(Tool):
+    name = "Scripts"
+    icon = "scripts.xbm"
+    hotkey = 'c'
+
+    def setup(self):
+        self.ui_but_script = tk.Button(
+            self.frame,
+            text="Choose script",
+            command=self.choose_script
+            )
+        self.ui_lab_script = tk.Label(
+            self.frame,
+            text="<not set>"
+            )
+        self.ui_but_output = tk.Button(
+            self.frame,
+            text="Choose output directory",
+            command=self.choose_dir
+            )
+        self.ui_lab_output = tk.Label(
+            self.frame,
+            text="<not set>"
+            )
+        self.ui_but_run = tk.Button(
+            self.frame,
+            text="Run!",
+            command=self.run
+            )
+
+        self.ui_but_script.grid(row=0, column=0)
+        self.ui_lab_script.grid(row=0, column=1)
+        #self.ui_but_output.grid(row=1, column=0)
+        #self.ui_lab_output.grid(row=1, column=1)
+        #self.ui_but_run.grid(row=2, column=0, columnspan=2)
+        self.ui_but_run.grid(row=1, column=0, columnspan=2)
+
+        self.scriptpath = None
+        self.outpath = None
+
+        self.update_button_state()
+
+    def choose_script(self):
+        # FIXME zipfile/etc. This is a context manager for a reason!
+        with importlib.resources.path(sample_scripts, ".") as p:
+            startpath = str(p)
+
+        scriptpath = tk.filedialog.askopenfilename(
+            initialdir = startpath,
+            title = "Select Script",
+            filetypes = (
+                ("Python scripts", "*.py"),
+                ("all files", "*")
+                )
+            )
+        if not scriptpath:
+            return
+
+        self.scriptpath = scriptpath
+        self.ui_lab_script.config(text=scriptpath)
+        self.update_button_state()
+
+    def choose_dir(self):
+        outpath = tk.filedialog.askdirectory()
+        if not outpath:
+            return
+
+        self.outpath = outpath
+        self.ui_lab_output.config(text=outpath)
+        self.update_button_state()
+
+    def update_button_state(self):
+        self.ui_but_run.config(
+            state=(
+                ["disabled", "normal"]
+                [None not in {self.scriptpath, }]
+                )
+            )
+        #self.ui_but_run.config(
+        #    state=(
+        #        ["disabled", "normal"]
+        #        [None not in {self.outpath, self.scriptpath}]
+        #        )
+        #    )
+
+    def run(self):
+        self.cmd.script(self.scriptpath, self.outpath)
+
 class SimTK:
     """Simulator with TK graphics. Encapsulates `Sim` instance."""
     def __init__(self, sim: Sim):
@@ -402,6 +516,7 @@ class SimTK:
         self.tbar.add_tool(ToolMeteor)
         self.tbar.add_tool(ToolMeteors)
         self.tbar.add_tool(ToolPlot)
+        self.tbar.add_tool(ToolScripts)
 
         self.canvas.bind("<Button-1>", self.tbar.cb_click)
 
@@ -468,10 +583,39 @@ class SimTK:
                 and callable(v := getattr(self.cmd, k))
                 }
             }
-        code.interact(local=locs)
+        self.console = code.InteractiveConsole(locals=locs)
+        self.console.interact()
 
     def spawn_shell_nonblocking(self):
         self.root.after(1, self.spawn_shell)
+
+    def egg(self):
+        win_egg = tk.Toplevel()
+        if platform.system() == 'Linux':
+            win_egg.attributes('-type', 'dialog')
+        image = tk.PhotoImage(
+            data=importlib.resources.read_binary(res.img, "informative.png"),
+            master=win_egg
+            ).zoom(8, 8)
+        DO_NOT_GARBAGE_COLLECT.append(image)
+        tk.Label(
+            win_egg,
+            image=image,
+            ).grid(row=0, column=0, rowspan=2)
+        informative = tk.Checkbutton(
+            win_egg,
+            text="Informative",
+            )
+        unfortunate = tk.Checkbutton(
+            win_egg,
+            text="Unfortunate",
+            )
+
+        informative.toggle()
+        unfortunate.toggle()
+
+        informative.grid(row=0, column=1)
+        unfortunate.grid(row=1, column=1)
 
 def cli():
     sim = Sim()
