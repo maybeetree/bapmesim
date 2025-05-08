@@ -29,29 +29,6 @@ def reverse_canvas_cpair(cpair):
     y = (cpair[1] - 200) / 50
     return x, y
 
-BITMAP = """
-#define im_width 32
-#define im_height 32
-static char im_bits[] = {
-0xaf,0x6d,0xeb,0xd6,0x55,0xdb,0xb6,0x2f,
-0xaf,0xaa,0x6a,0x6d,0x55,0x7b,0xd7,0x1b,
-0xad,0xd6,0xb5,0xae,0xad,0x55,0x6f,0x05,
-0xad,0xba,0xab,0xd6,0xaa,0xd5,0x5f,0x93,
-0xad,0x76,0x7d,0x67,0x5a,0xd5,0xd7,0xa3,
-0xad,0xbd,0xfe,0xea,0x5a,0xab,0x69,0xb3,
-0xad,0x55,0xde,0xd8,0x2e,0x2b,0xb5,0x6a,
-0x69,0x4b,0x3f,0xb4,0x9e,0x92,0xb5,0xed,
-0xd5,0xca,0x9c,0xb4,0x5a,0xa1,0x2a,0x6d,
-0xad,0x6c,0x5f,0xda,0x2c,0x91,0xbb,0xf6,
-0xad,0xaa,0x96,0xaa,0x5a,0xca,0x9d,0xfe,
-0x2c,0xa5,0x2a,0xd3,0x9a,0x8a,0x4f,0xfd,
-0x2c,0x25,0x4a,0x6b,0x4d,0x45,0x9f,0xba,
-0x1a,0xaa,0x7a,0xb5,0xaa,0x44,0x6b,0x5b,
-0x1a,0x55,0xfd,0x5e,0x4e,0xa2,0x6b,0x59,
-0x9a,0xa4,0xde,0x4a,0x4a,0xd2,0xf5,0xaa
-};
-"""
-
 DO_NOT_GARBAGE_COLLECT = []
 
 def get_bitmap(filename, master):
@@ -147,20 +124,20 @@ class SimCMD:
         self.simtk.sim.scatter_nodes(num, loc, scale)
         self.simtk.draw_nodes()
 
-    def asteroid(self, size, loc=(0, 0)):
+    def meteor(self, size, loc=(0, 0)):
         points = self.simtk.sim.kdtree.query_ball_point(loc, size)
         #points.sort()
-        print(points)
-        print(len(points))
+        #print(points)
+        #print(len(points))
 
         # FIXME cleanup this spaghett
-        print(f"brefore: {self.simtk.sim.clst_indices}")
+        #print(f"brefore: {self.simtk.sim.clst_indices}")
         nodes_in_clsts = [0] * len(self.simtk.sim.clst_indices)
         for point in points:
             for i, (left, right) in enumerate(duplets(self.simtk.sim.clst_indices)):
                 i = i + 1
                 if left <= point < right:
-                    print(f"point {point} in {right}")
+                    #print(f"point {point} in {right}")
                     for x in range(i, len(self.simtk.sim.clst_indices)):
                         nodes_in_clsts[x] += 1
 
@@ -168,14 +145,25 @@ class SimCMD:
             self.simtk.sim.clst_indices[i] -= x
 
         #self.simtk.sim.clst_indices[-1] -= len(points)
-        print(f"after: {self.simtk.sim.clst_indices}")
+        #print(f"after: {self.simtk.sim.clst_indices}")
 
-        print(len(self.simtk.sim.nodes_pos))
+        #print(len(self.simtk.sim.nodes_pos))
         self.simtk.sim.nodes_pos = np.delete(
             self.simtk.sim.nodes_pos, points, axis=0)
-        print(len(self.simtk.sim.nodes_pos))
+        #print(len(self.simtk.sim.nodes_pos))
         self.simtk.sim.make_tree()
         self.simtk.draw_nodes()
+
+    def meteors(self, size, number):
+        xmin, ymin = self.simtk.sim.nodes_pos.min(axis=0)
+        xmax, ymax = self.simtk.sim.nodes_pos.max(axis=0)
+        positions = np.random.uniform(
+            [xmin, ymin],
+            [xmax, ymax],
+            size=[number, 2]
+            )
+        for loc in positions:
+            self.meteor(size, loc)
 
     def make_plots(self, node_range=0.1):
         self.simtk.sim.make_graph(node_range)
@@ -278,10 +266,10 @@ class ToolScatter(Tool):
             scale=float(self.ui_scale.get())
             )
 
-class ToolAsteroid(Tool):
-    name = "Asteroid"
-    icon = "asteroid.xbm"
-    hotkey = 'a'
+class ToolMeteor(Tool):
+    name = "Meteor"
+    icon = "meteor.xbm"
+    hotkey = 'm'
 
     def setup(self):
         self.ui_size = tk.Spinbox(
@@ -294,9 +282,42 @@ class ToolAsteroid(Tool):
 
     def cb_click(self, event):
         x, y = reverse_canvas_cpair((event.x, event.y))
-        self.cmd.asteroid(
+        self.cmd.meteor(
             size=float(self.ui_size.get()),
             loc=(x, y),
+            )
+
+class ToolMeteors(Tool):
+    name = "Meteors"
+    icon = "meteors.xbm"
+    hotkey = 'M'
+
+    def setup(self):
+        self.ui_size = tk.Spinbox(
+            self.frame,
+            value=0.5
+            )
+        self.ui_number = tk.Spinbox(
+            self.frame,
+            value=100
+            )
+        self.ui_but = tk.Button(
+            self.frame,
+            text="Blast!",
+            command=lambda: self.cb_click(None)
+            )
+
+        tk.Label(self.frame, text="Meteor size:").grid(row=0, column=0)
+        self.ui_size.grid(row=0, column=1)
+        tk.Label(self.frame, text="Number of meteors:").grid(row=1, column=0)
+        self.ui_number.grid(row=1, column=1)
+
+        self.ui_but.grid(row=2, column=0, columnspan=2)
+
+    def cb_click(self, event):
+        self.cmd.meteors(
+            size=float(self.ui_size.get()),
+            number=int(self.ui_number.get()),
             )
 
 class ToolPlot(Tool):
@@ -378,7 +399,8 @@ class SimTK:
             self.root,
             )
         self.tbar.add_tool(ToolScatter)
-        self.tbar.add_tool(ToolAsteroid)
+        self.tbar.add_tool(ToolMeteor)
+        self.tbar.add_tool(ToolMeteors)
         self.tbar.add_tool(ToolPlot)
 
         self.canvas.bind("<Button-1>", self.tbar.cb_click)
