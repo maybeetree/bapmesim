@@ -24,7 +24,6 @@ jobs:
       - name: Set up everything else (Linux)
         run: |
           set -e
-          cd bapmesim_tk
           pip install -e .
           pip install pyinstaller
           pip uninstall --yes typing
@@ -41,7 +40,7 @@ jobs:
       - name: Upload release artifact (Linux)
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "bapmesim_tk/dist/bapmesim_tk-*-linux"
+          artifacts: "dist/bapmesim_tk-*-linux"
           # Allow adding artifact to existing release
           allowUpdates: true
 
@@ -63,7 +62,6 @@ jobs:
       - name: Set up everything else (Windows)
         shell: cmd
         run: |
-          cd bapmesim_tk
           pip install -e .
           pip install pyinstaller
           pip uninstall --yes typing
@@ -78,7 +76,7 @@ jobs:
       - name: Upload release artifact (Windows)
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "bapmesim_tk/dist/bapmesim_tk-*-windows.exe"
+          artifacts: "dist/bapmesim_tk-*-windows.exe"
           # Allow adding artifact to existing release
           allowUpdates: true
 

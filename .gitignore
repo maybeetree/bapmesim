@@ -78,5 +78,5 @@ htmlcov
 ### Project-specific ###
 
 
-!bapmesim_tk/src/bapmesim_tk/res/img/*.png
-!bapmesim_tk/src/bapmesim_tk/res/img/*.xbm
+!src/bapmesim_tk/res/img/*.png
+!src/bapmesim_tk/res/img/*.xbm
