@@ -323,7 +323,7 @@ class ToolMeteors(Tool):
             self.frame,
             value=0.5
             )
-        self.ui_number = tk.Spinbox(
+        self.ui_num = tk.Spinbox(
             self.frame,
             value=100
             )
@@ -336,14 +336,14 @@ class ToolMeteors(Tool):
         tk.Label(self.frame, text="Meteor size:").grid(row=0, column=0)
         self.ui_size.grid(row=0, column=1)
         tk.Label(self.frame, text="Number of meteors:").grid(row=1, column=0)
-        self.ui_number.grid(row=1, column=1)
+        self.ui_num.grid(row=1, column=1)
 
         self.ui_but.grid(row=2, column=0, columnspan=2)
 
     def cb_click(self, event):
         self.cmd.meteors(
             size=float(self.ui_size.get()),
-            number=int(self.ui_number.get()),
+            num=int(self.ui_num.get()),
             )
 
 class ToolPlot(Tool):
