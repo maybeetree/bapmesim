@@ -23,6 +23,7 @@ dependencies = [
 	"matplot",
 	"scipy",
 	"rasterio",
+	"ipython",
 	]
 
 #[project.scripts]

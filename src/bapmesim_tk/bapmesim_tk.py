@@ -1,6 +1,5 @@
 import tkinter as tk
 import tkinter.filedialog
-import code
 import platform
 import logging
 import importlib.resources
@@ -25,6 +24,20 @@ from sys import exit
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+
+try:
+    import IPython
+    import threading
+    HAVE_IPYTHON=True
+except ImportError:
+    log.error(
+        "Could not import IPython. Falling back to "
+        "builtin `code.InteractiveConsole`. "
+        "Expect jank."
+        )
+    import code
+    HAVE_IPYTHON=False
 
 
 def reverse_canvas_cpair(cpair):
@@ -187,10 +200,13 @@ class SimCMD:
         with open(scriptpath, 'r') as f:
             scriptcode = f.read()
 
-        self.simtk.console.runsource(
-            scriptcode,
-            symbol='exec'
-            )
+        if HAVE_IPYTHON:
+            exec(scriptcode, self.simtk.console_locs)
+        else:
+            self.simtk.console_code.runsource(
+                scriptcode,
+                symbol='exec'
+                )
 
 
 class Toolbar:
@@ -584,7 +600,7 @@ class SimTK:
         self.root.mainloop()
 
     def spawn_shell(self):
-        locs = {
+        self.console_locs = {
             **locals(),
             **globals(),
             **{
@@ -593,11 +609,27 @@ class SimTK:
                 and callable(v := getattr(self.cmd, k))
                 }
             }
-        self.console = code.InteractiveConsole(locals=locs)
-        self.console.interact()
+
+        if HAVE_IPYTHON:
+            self.console_ipy = IPython.terminal.embed.InteractiveShellEmbed(
+                #config=c,
+                user_ns=self.console_locs
+                )
+            self.console_ipy()
+        else:
+            self.console_code = code.InteractiveConsole(
+                locals=self.console_locs
+                )
+            self.console_code.interact()
 
     def spawn_shell_nonblocking(self):
-        self.root.after(1, self.spawn_shell)
+        if HAVE_IPYTHON:
+            threading.Thread(
+                target=self.spawn_shell,
+                daemon=True
+                ).start()
+        else:
+            self.root.after(1, self.spawn_shell)
 
     def egg(self):
         win_egg = tk.Toplevel()
