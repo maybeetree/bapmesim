@@ -27,8 +27,10 @@ python3 -m bapmesim_tk
 
 Note that `tkinter` is required.
 If it is not already installed (it is usually bundled with Python),
-check your package manager
-for something like `python3-tkinter` or `python-tk`.
+check your package manager.
+
+- Alpine Linux: `apk add python3-tkinter`
+- Void Linux: `xbps-install -Syu python3-tkinter`
 
 
 ## Using

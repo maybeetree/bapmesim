@@ -9,6 +9,7 @@ import numpy as np
 import scipy as sp
 import networkx as nx
 import matplotlib.pyplot as plt
+import rasterio
 
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -117,6 +118,10 @@ class Sim:
             self.graph, 0
             )
 
+    def load_terrain(self, *args):
+        self.ter_reader = rasterio.open(*args)
+        self.ter = self.ter_reader.read(1)
+
 class SimCMD:
     """Interactive commands for simulation."""
     def __init__(self, simtk):
@@ -174,6 +179,9 @@ class SimCMD:
 
     def egg(self):
         self.simtk.egg()
+
+    def load_terrain(self, path):
+        self.simtk.sim.load_terrain(path)
 
     def script(self, scriptpath, outpath):
         with open(scriptpath, 'r') as f:
@@ -246,6 +254,8 @@ class Toolbar:
                 first_child.selection_adjust(999999)
 
     def cb_click(self, event):
+        if self.tool is None:
+            return
         self.tools[self.tool].cb_click(event)
 
 class Tool:
@@ -616,6 +626,12 @@ class SimTK:
 
         informative.grid(row=0, column=1)
         unfortunate.grid(row=1, column=1)
+
+    def show_terrain(self, path):
+        self.ter_img = tk.PhotoImage(
+            file=path, master=self.root
+            ).subsample(10, 10)
+        self.canvas.create_image((0, 0), image=self.ter_img)
 
 def cli():
     sim = Sim()
