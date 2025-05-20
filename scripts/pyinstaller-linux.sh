@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -e
-
 pipmodules="$(pip freeze)"
 
 #if ! command -v zstd
@@ -90,6 +88,4 @@ mv dist/bapmesim_tk "dist/bapmesim_tk-${tagname}-linux"
 #tar c "bapmesim_tk-${tagname}-linux" - |
 #	zstd --long --ultra --threads=0 -22 > 
 #	"bapmesim_tk-${tagname}-linux.tar.zst"
-
-set +e
 
