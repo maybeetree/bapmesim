@@ -1,7 +1,5 @@
 #!/bin/sh
 
-pipmodules="$(pip freeze)"
-
 #if ! command -v zstd
 #	if command -v apk
 #	then
@@ -29,17 +27,17 @@ then
 	fi
 fi
 
-if ! (printf '%s\n' "$pipmodules" | grep bapmesim_tk)
+if ! (printf '%s\n' "$(pip freeze)" | grep bapmesim_tk)
 then
 	pip install -e .
 fi
 
-if ! (printf '%s\n' "$pipmodules" | grep pyinstaller)
+if ! (printf '%s\n' "$(pip freeze)" | grep pyinstaller)
 then
 	pip install pyinstaller
 fi
 
-if (printf '%s\n' "$pipmodules" | grep typing)
+if (printf '%s\n' "$(pip freeze)" | grep typing)
 then
 	pip uninstall --yes typing
 fi
