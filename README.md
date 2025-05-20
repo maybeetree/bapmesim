@@ -10,6 +10,25 @@ Currently there is only one, `bapmesim_tk`.
 Download and run the windows or linux build from the
 [releases page](https://github.com/maybeetree/bapmesim/releases).
 
+
+## Using
+
+Use the scatter scatter tool (first from top) to place down clusters of nodes.
+The meteor tool (second from top) simulates a meteor strike
+that kills nodes in a specified range.
+The meteors tool (third) simulates multiple meteor strikes
+distributed evenly across the area covered by the nodes.
+The plot tool (fourth) can be used to generate
+a pie chart showing how many nodes are connected,
+and a histogram showing the path length to the root node.
+The script tool (fifth) can be used to run scripts.
+
+## Scripting
+
+In addition to the GUI, BAPMESIM also shows an interactive python
+console that can be used to run python commands as well as BAPMESIM tools.
+The script tool can also be used to load and execute a `.py` script file.
+
 ## Developing
 
 You can install it with the standard Python method:
@@ -32,24 +51,32 @@ check your package manager.
 - Alpine Linux: `apk add python3-tkinter`
 - Void Linux: `xbps-install -Syu python3-tkinter`
 
+### Making your own builds
 
-## Using
+Our own binary builds are created using github actions
+which run the windows and linux build scripts in the `scripts` directory.
+If you would like to make binary builds yourself,
+you can use these build scripts as a reference.
+They will probably not work out of the box on your machine though,
+you will need to edit them to fit your environment.
 
-Use the scatter scatter tool (first from top) to place down clusters of nodes.
-The meteor tool (second from top) simulates a meteor strike
-that kills nodes in a specified range.
-The meteors tool (third) simulates multiple meteor strikes
-distributed evenly across the area covered by the nodes.
-The plot tool (fourth) can be used to generate
-a pie chart showing how many nodes are connected,
-and a histogram showing the path length to the root node.
-The script tool (fifth) can be used to run scripts.
+#### Using pyinstaller with virtiofs
 
-## Scripting
+If you're trying to debug the windows build process in a VM
+and you're mounting this repository into the VM using virtiofs,
+you will run an obscure error that sounds like
+"volume does not have a recognised filesystem"
+or something like that.
 
-In addition to the GUI, BAPMESIM also shows an interactive python
-console that can be used to run python commands as well as BAPMESIM tools.
-The script tool can also be used to load and execute a `.py` script file.
+To fix it you need to perform the following incantation
+(inside the VM) and reboot it:
+
+```
+reg add HKLM\Software\VirtIO-FS /v MountPoint /d \\.\Z:
+```
+
+More info:
+<https://github.com/virtio-win/kvm-guest-drivers-windows/issues/517>
 
 ## License
 

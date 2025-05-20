@@ -22,20 +22,7 @@ jobs:
           python-version: '3.12'
 
       - name: Set up everything else (Linux)
-        run: |
-          set -e
-          pip install -e .
-          pip install pyinstaller
-          pip uninstall --yes typing
-          pyinstaller \
-            --hidden-import='PIL._tkinter_finder' \
-            --name bapmesim_tk \
-            --add-data=src/bapmesim_tk/res:bapmesim_tk/res \
-            --onefile \
-            src/bapmesim_tk/__main__.py 
-          tagname=$(git describe --tags --abbrev=0)
-          mv dist/bapmesim_tk "dist/bapmesim_tk-${tagname}-linux"
-          set +e
+        run: ./scripts/pyinstaller-linux.sh
 
       - name: Upload release artifact (Linux)
         uses: ncipollo/release-action@v1
@@ -61,17 +48,7 @@ jobs:
 
       - name: Set up everything else (Windows)
         shell: cmd
-        run: |
-          pip install -e .
-          pip install pyinstaller
-          pip uninstall --yes typing
-          pyinstaller ^
-            --hidden-import=PIL._tkinter_finder ^
-            --name bapmesim_tk ^
-            --add-data=src/bapmesim_tk/res:bapmesim_tk/res ^
-            --onefile ^
-            src/bapmesim_tk/__main__.py
-          ren dist\bapmesim_tk.exe "bapmesim_tk-${{ github.ref_name }}-windows.exe"
+        run: .\scripts\pyinstaller-windows.bat
 
       - name: Upload release artifact (Windows)
         uses: ncipollo/release-action@v1

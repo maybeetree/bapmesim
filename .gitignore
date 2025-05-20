@@ -80,3 +80,5 @@ htmlcov
 
 !src/bapmesim_tk/res/img/*.png
 !src/bapmesim_tk/res/img/*.xbm
+tag.txt
+tagname.txt
