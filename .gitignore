@@ -70,6 +70,7 @@ htmlcov
 *.avif
 *.gif
 *.pdf
+*.xcf
 !img/*.jpg
 !img/*.png
 !img/*.svg

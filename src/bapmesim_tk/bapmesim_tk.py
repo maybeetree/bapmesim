@@ -17,6 +17,7 @@ from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 from .iters import duplets
 from . import res
 from . import sample_scripts
+from . import sample_terrains
 from .res import img
 
 # ??? `exit` not available when running in pyinstaller???
@@ -29,6 +30,7 @@ logging.basicConfig(level=logging.INFO)
 try:
     import IPython
     import threading
+    from IPython.core.debugger import set_trace
     HAVE_IPYTHON=True
 except ImportError:
     log.error(
@@ -195,6 +197,7 @@ class SimCMD:
 
     def load_terrain(self, path):
         self.simtk.sim.load_terrain(path)
+        self.simtk.show_terrain()
 
     def script(self, scriptpath, outpath):
         with open(scriptpath, 'r') as f:
@@ -481,6 +484,42 @@ class ToolScripts(Tool):
     def run(self):
         self.cmd.script(self.scriptpath, self.outpath)
 
+class ToolTerrain(Tool):
+    name = "Terrain"
+    icon = "terrain.xbm"
+    hotkey = 't'
+
+    def setup(self):
+        self.ui_but = tk.Button(
+            self.frame,
+            text="Load terrain",
+            command=self.load_terrain
+            )
+        self.ui_lab = tk.Label(
+            self.frame,
+            text="<not set>"
+            )
+
+        self.ui_but.grid(row=0, column=0)
+        self.ui_lab.grid(row=1, column=0)
+
+    def load_terrain(self):
+        # FIXME zipfile/etc. This is a context manager for a reason!
+        with importlib.resources.path(sample_terrains, ".") as p:
+            startpath = str(p)
+
+        path = tk.filedialog.askopenfilename(
+            initialdir = startpath,
+            title = "Select Terrain File",
+            filetypes = (
+                ("all files", "*"),
+                )
+            )
+        if not path:
+            return
+
+        self.cmd.load_terrain(path)
+
 class SimTK:
     """Simulator with TK graphics. Encapsulates `Sim` instance."""
     def __init__(self, sim: Sim):
@@ -490,6 +529,9 @@ class SimTK:
         self.fig_hist, self.ax_hist = plt.subplots(1, figsize=(3.5, 2.5))
 
         self.root = tk.Tk()
+
+        self.scroll_x = 0
+        self.scroll_y = 0
 
         if platform.system() == 'Linux':
             self.root.attributes('-type', 'dialog')
@@ -542,9 +584,62 @@ class SimTK:
         self.tbar.add_tool(ToolMeteor)
         self.tbar.add_tool(ToolMeteors)
         self.tbar.add_tool(ToolPlot)
+        self.tbar.add_tool(ToolTerrain)
         self.tbar.add_tool(ToolScripts)
 
-        self.canvas.bind("<Button-1>", self.tbar.cb_click)
+        self.canvas.bind("<Button>", self.cb_button)
+        self.canvas.bind("<MouseWheel>", self.cb_mousewheel)
+
+    def cb_button(self, event):
+        if event.num == 1:
+            self.tbar.cb_click(event)
+
+        elif event.num == 2:
+            pass
+
+        # The below handles scrolling.
+        # Vertical scrolling is buttons 4 and 5.
+        # Horizontal scrolling *in xorg* is buttons 6 and 7
+        # but tkinter doesn't actually support these
+        # (I'm still testing for it just in case).
+        #
+        # What tkinter actually does if it
+        # receives horizontal scroll events is it pretends
+        # that they are also buttons 4 and 5 with the shift key pressed
+        # down (event.state == 1).
+        #
+        # Testing for this also means that we automatically support
+        # mouse users who have only vertical scroll and actually
+        # hold down shift when they want to scroll horizontally
+        #
+        # Windows scroll handling works completely differently,
+        # that's handled in cb_mousewheel
+
+        elif event.num == 4 and event.state == 1 or event.num == 6:
+            self.scroll_x += 1
+            self.canvas.scan_dragto(self.scroll_x, self.scroll_y)
+
+        elif event.num == 5 and event.state == 1 or event.num == 7:
+            self.scroll_x -= 1
+            self.canvas.scan_dragto(self.scroll_x, self.scroll_y)
+
+        elif event.num == 4:
+            self.scroll_y += 1
+            self.canvas.scan_dragto(self.scroll_x, self.scroll_y)
+
+        elif event.num == 5:
+            self.scroll_y -= 1
+            self.canvas.scan_dragto(self.scroll_x, self.scroll_y)
+    
+    def cb_mousewheel(self, event):
+        # MouseWheel events are only emitted in Windows.
+        # For linux/xorg scrolling is handled in cb_button
+        if event.state == 1:
+            self.scroll_x += event.delta // abs(event.delta)
+        else:
+            self.scroll_y += event.delta // abs(event.delta)
+        self.canvas.scan_dragto(self.scroll_x, self.scroll_y)
+
 
     def callback_scatter(self):
         self.sim.scatter_nodes(int(self.spin_num_nodes.get()))
@@ -659,11 +754,31 @@ class SimTK:
         informative.grid(row=0, column=1)
         unfortunate.grid(row=1, column=1)
 
-    def show_terrain(self, path):
+    def show_terrain(self):
+        image = self.sim.ter
+        height, width = image.shape
+        info = np.iinfo(image.dtype)
+        norm = image / (info.max - info.min) + (info.min / (info.max - info.min))
+        uint8 = (norm * 255).astype(np.uint8)
+
+        # Thanks https://stackoverflow.com/a/68601202
+        # for this clever trick
+        data = b''.join((
+            f'P5 {width} {height} 255 '.encode('ascii'),
+            uint8.tobytes()
+            ))
+
         self.ter_img = tk.PhotoImage(
-            file=path, master=self.root
-            ).subsample(10, 10)
-        self.canvas.create_image((0, 0), image=self.ter_img)
+            master=self.root,
+            width=width,
+            height=height,
+            data=data,
+            format='PPM'
+            )#.subsample(10, 10)
+        #self.ter_img = tk.PhotoImage(
+        #    file=path, master=self.root
+        #    ).subsample(10, 10)
+        self.canvas.create_image((width / 2, height / 2), image=self.ter_img)
 
 def cli():
     sim = Sim()

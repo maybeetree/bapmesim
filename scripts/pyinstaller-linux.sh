@@ -74,6 +74,7 @@ pyinstaller \
 	--name bapmesim_tk \
 	--add-data=src/bapmesim_tk/res:bapmesim_tk/res \
 	--add-data=src/bapmesim_tk/sample_scripts:bapmesim_tk/sample_scripts \
+	--add-data=src/bapmesim_tk/sample_terrains:bapmesim_tk/sample_terrains \
 	`#--onedir ` \
 	--onefile \
 	src/bapmesim_tk/__main__.py 

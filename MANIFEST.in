@@ -1,3 +1,4 @@
 include src/res
 include src/sample_scripts
+include src/sample_terrains
 
