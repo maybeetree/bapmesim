@@ -199,6 +199,29 @@ class SimCMD:
         self.simtk.sim.load_terrain(path)
         self.simtk.show_terrain()
 
+    def hillshade(self, azi: float, alti: float):
+        # Thanks to
+        # https://www.neonscience.org/resources/learning-hub/tutorials/create-hillshade-py
+        azi = np.deg2rad(360.0 - azi)
+        alti = np.deg2rad(alti)
+
+        x, y = np.gradient(self.simtk.sim.ter)
+        slope = np.pi / 2. - np.arctan(np.sqrt(x * x + y * y))
+        aspect = np.arctan2(-x, y)
+
+        shaded = (
+            np.sin(azi) * np.sin(slope)
+            + np.cos(alti)
+            * np.cos(slope)
+            * np.cos((azi - np.pi / 2.) - aspect)
+            )
+
+        scale = np.iinfo(self.simtk.sim.ter.dtype).max
+
+        self.simtk.sim.shaded = (
+            scale * (shaded + 1) / 2 ).astype(self.simtk.sim.ter.dtype)
+        self.simtk.show_terrain()
+
     def script(self, scriptpath, outpath):
         with open(scriptpath, 'r') as f:
             scriptcode = f.read()
@@ -520,6 +543,44 @@ class ToolTerrain(Tool):
 
         self.cmd.load_terrain(path)
 
+class ToolHillshade(Tool):
+    name = "Hillshade"
+    icon = "hillshade.xbm"
+    hotkey = 'h'
+
+    def setup(self):
+        self.ui_azi = tk.Scale(
+            self.frame,
+            from_=-180,
+            to=180,
+            orient="horizontal"
+            )
+        self.ui_alti = tk.Scale(
+            self.frame,
+            from_=-180,
+            to=180,
+            orient="horizontal"
+            )
+        self.ui_but = tk.Button(
+            self.frame,
+            text="Calculate!",
+            command=self.hillshade
+            )
+
+        tk.Label(self.frame, text="Azimuth:").grid(row=0, column=0)
+        self.ui_azi.grid(row=0, column=1)
+        tk.Label(self.frame, text="Altitude:").grid(row=1, column=0)
+        self.ui_alti.grid(row=1, column=1)
+        
+        self.ui_but.grid(row=3)
+
+    def hillshade(self):
+        self.cmd.hillshade(
+            float(self.ui_azi.get()),
+            float(self.ui_alti.get()),
+            )
+
+
 class SimTK:
     """Simulator with TK graphics. Encapsulates `Sim` instance."""
     def __init__(self, sim: Sim):
@@ -585,6 +646,7 @@ class SimTK:
         self.tbar.add_tool(ToolMeteors)
         self.tbar.add_tool(ToolPlot)
         self.tbar.add_tool(ToolTerrain)
+        self.tbar.add_tool(ToolHillshade)
         self.tbar.add_tool(ToolScripts)
 
         self.canvas.bind("<Button>", self.cb_button)
@@ -630,6 +692,11 @@ class SimTK:
         elif event.num == 5:
             self.scroll_y -= 1
             self.canvas.scan_dragto(self.scroll_x, self.scroll_y)
+
+        # FIXME state is probably a bitmask,
+        # read it idiomatically
+        # TODO there are other scrolling methods,
+        # integration with scrollbar widget. Are these better?
     
     def cb_mousewheel(self, event):
         # MouseWheel events are only emitted in Windows.
@@ -755,7 +822,9 @@ class SimTK:
         unfortunate.grid(row=1, column=1)
 
     def show_terrain(self):
-        image = self.sim.ter
+        # FIXME this is some top-quality spaghett
+        image = getattr(self.sim, 'shaded', self.sim.ter)
+
         height, width = image.shape
         info = np.iinfo(image.dtype)
         norm = image / (info.max - info.min) + (info.min / (info.max - info.min))
