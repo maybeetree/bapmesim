@@ -83,3 +83,5 @@ htmlcov
 !src/bapmesim_tk/res/img/*.xbm
 tag.txt
 tagname.txt
+!src/bapmesim_tk/sample_terrains/*.png
+
