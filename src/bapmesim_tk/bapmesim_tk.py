@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.filedialog
 import platform
 import logging
+import re
 import importlib.resources
 
 import numpy as np
@@ -82,6 +83,41 @@ class Sim:
         self.nodes_pos = None
         self.clst_indices = [0]
 
+    def circles(self, radii, nodes, loc):
+        #print(radii, nodes)
+        assert len(radii) == len(nodes), \
+            "number of `radii` and `nodes` lists must be the same."
+
+        new_nodes = [loc]
+
+        for radius, num_nodes in zip(radii, nodes, strict=True):
+            for angle in np.linspace(0, np.pi * 2, num_nodes):
+                # This is very slow but i find myself in a state
+                # of peculiar confusion that prevents me from
+                # doing this the fast numpy way for now.
+                # Hopefully this changes soon.
+                new_nodes.append((
+                    np.sin(angle) * radius + loc[0],
+                    np.cos(angle) * radius + loc[1],
+                    ))
+
+        if self.nodes_pos is None:
+            self.nodes_pos = np.vstack((
+                loc,
+                new_nodes
+                ))
+
+        else:
+            self.nodes_pos = np.vstack((
+                self.nodes_pos,
+                loc,
+                new_nodes
+                ))
+
+        self.clst_indices.append(len(self.nodes_pos))
+        self.make_tree()
+
+
     def scatter_nodes(self, num, loc, scale):
         scattered_nodes = np.random.normal(
             loc=loc,
@@ -144,6 +180,10 @@ class SimCMD:
 
     def scatter(self, num, loc=(0, 0), scale=1):
         self.simtk.sim.scatter_nodes(num, loc, scale)
+        self.simtk.draw_nodes()
+
+    def circles(self, radii, nodes, loc=(0, 0)):
+        self.simtk.sim.circles(radii, nodes, loc)
         self.simtk.draw_nodes()
 
     def meteor(self, size, loc=(0, 0)):
@@ -342,6 +382,48 @@ class ToolScatter(Tool):
             num=int(self.ui_num.get()),
             loc=(x, y),
             scale=float(self.ui_scale.get())
+            )
+
+class ToolCircles(Tool):
+    name = "Scatter Nodes in Circles"
+    icon = "circles.xbm"
+    hotkey = 'S'
+
+    def setup(self):
+        self.ui_radii = tk.Entry(
+            self.frame,
+            width=20,
+            )
+
+        self.ui_nodes = tk.Entry(
+            self.frame,
+            width=20,
+            )
+
+        self.ui_radii.insert(0, "1.0, 2.0, 3.5")
+        self.ui_nodes.insert(0, "10, 20, 50")
+
+        #tk.Label(self.root, text="Number of nodes:").grid(row=2, column=0)
+
+        tk.Label(self.frame, text="Radii of circles:").grid(row=0, column=0)
+        self.ui_radii.grid(row=0, column=1)
+        tk.Label(self.frame, text="Nodes per each circle:").grid(row=1, column=0)
+        self.ui_nodes.grid(row=1, column=1)
+
+    def cb_click(self, event):
+        self.re_ints = re.compile(
+            r'\d+'
+            )
+
+        self.re_floats = re.compile(
+            r'\d+(?:\.\d+)?'
+            )
+
+        x, y = reverse_canvas_cpair((event.x, event.y))
+        self.cmd.circles(
+            radii=tuple(map(float, self.re_floats.findall(self.ui_radii.get()))),
+            nodes=tuple(map(int, self.re_ints.findall(self.ui_nodes.get()))),
+            loc=(x, y),
             )
 
 class ToolMeteor(Tool):
@@ -642,6 +724,7 @@ class SimTK:
             self.root,
             )
         self.tbar.add_tool(ToolScatter)
+        self.tbar.add_tool(ToolCircles)
         self.tbar.add_tool(ToolMeteor)
         self.tbar.add_tool(ToolMeteors)
         self.tbar.add_tool(ToolPlot)
