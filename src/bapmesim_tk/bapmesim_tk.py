@@ -817,8 +817,11 @@ class SimTK:
             if clst_next - clst > 200:
                 log.info(f"Drawing 200 nodes of {clst_next - clst}")
 
-            for node_i in range(clst, min(clst + 200, clst_next)):
+            for node_i in range(clst + 1, min(clst + 200, clst_next)):
                 self.draw_node(self.sim.nodes_pos[node_i])
+
+                self.draw_node(self.sim.nodes_pos[clst],
+                    style={'fill': 'red'})
 
     def plot_path_length_hist(self):
         """Make plot of number of hops to root node for each node."""

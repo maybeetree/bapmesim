@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bapmesim_tk"
-version = "0.0.7"
+version = "0.0.8"
 description = """BAP Mesh Simulator with tkinter"""
 authors = [
 	{name = "maybetree", email = "no@email.com"}
